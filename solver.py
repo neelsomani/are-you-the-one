@@ -2,7 +2,7 @@
 
 import logging
 import random
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 
 def current_possibilities(
@@ -88,6 +88,56 @@ def probability_of(pairings: List[Dict], a: str, b: str) -> float:
         The name of another contestant
     """
     return sum([p[a] == b for p in pairings]) / len(pairings)
+
+
+def get_optimal_pairing(
+        pairings: List[Dict], sample: Optional[int] = None
+) -> Dict:
+    """
+    Return the pairing that minimizes the expected size of the solution
+    space after seeing the number of lights.
+
+    Parameters
+    ----------
+    pairings : List[Dict]
+        A list of pairings, such as those returned by
+        `get_all_possible_pairings`
+    sample : Optional[int]
+        If specified, randomly pick `sample` pairings and use that to estimate
+        the expected size of the solution space after accounting for lights.
+        If None, calculate the exact result.
+    """
+    if len(pairings) < 1:
+        raise ValueError('There must be at least one possible pairing')
+    n_contestants = len(pairings[0])
+    min_lights = float('inf')
+    min_pairing = None
+    for idx, p in enumerate(pairings):
+        # The expected size of the sample space is:
+        # sum_{k = 0 to k = N / 2}
+        # { # pairings that would result in k lights } / { total # pairings }
+        # times { # pairings that would result in k lights },
+        # where the first expression is the probability of k lights,
+        # and the second expression is the resulting size of the solution
+        # space. We ignore the constant factor of 1 / { total # pairings }.
+        if sample:
+            expected_size = sum(
+                [sum([_correct_number(
+                    guess=p,
+                    truth=pairings[int(random.random() * len(pairings))],
+                    actually_correct=k
+                ) for _ in range(sample)])**2
+                 for k in range(int(n_contestants / 2) + 1)])
+        else:
+            expected_size = sum([sum([_correct_number(guess=p,
+                                                      truth=other_pairing,
+                                                      actually_correct=k)
+                                      for other_pairing in pairings])**2
+                                 for k in range(int(n_contestants / 2) + 1)])
+        if expected_size < min_lights:
+            min_pairing = p
+            min_lights = expected_size
+    return min_pairing
 
 
 def n_guesses(contestants: int) -> int:

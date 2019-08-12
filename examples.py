@@ -6,6 +6,7 @@ from typing import Dict, List
 from solver import (
     average_n_guesses,
     current_possibilities,
+    get_optimal_pairing,
     get_probability_matrix,
     pretty_print_matrix,
     probability_of
@@ -104,6 +105,12 @@ def season_eight_week_six() -> List[Dict]:
     ]
     match = [('Aasha', 'Brandon')]
     return current_possibilities(names, weeks, lights, not_match, match)
+
+
+def season_eight_optimal() -> Dict:
+    return get_optimal_pairing(
+        season_eight_week_six()
+    )
 
 
 def print_season_eight() -> None:
